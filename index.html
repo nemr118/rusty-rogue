@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>⚜ Diablo Rogue ⚜</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#06070a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #040507;
+      color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      overflow: hidden;
+      height: 100vh;
+      height: 100dvh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      touch-action: manipulation;
+    }
+
+    /* Top Gothic Bar */
+    #header {
+      background: linear-gradient(180deg, #181410, #090807);
+      border-bottom: 2px solid #6b4d24;
+      padding: 5px 10px;
+      padding-top: max(6px, env(safe-area-inset-top));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      z-index: 10;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .header-title {
+      font-weight: bold;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 1px;
+      text-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+    }
+
+    /* Equipment & Status Strip */
+    #equip-bar {
+      background: #0d0b09;
+      border-bottom: 1px solid #45331a;
+      padding: 4px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #d1b894;
+      z-index: 10;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .equip-tag {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Game Canvas */
+    #game-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #020305;
+      min-height: 0;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    /* Message Log Overlay */
+    #log-overlay {
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      right: 10px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      z-index: 5;
+    }
+    .log-entry {
+      background: rgba(8, 10, 16, 0.9);
+      border-left: 3px solid #fbbf24;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      max-width: 95%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    /* DIABLO GOTHIC DASHBOARD */
+    #diablo-dashboard {
+      background: linear-gradient(180deg, #181410, #090807);
+      border-top: 3px solid #6b4d24;
+      padding: 6px 8px;
+      padding-bottom: max(28px, calc(16px + env(safe-area-inset-bottom)));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      z-index: 10;
+      flex-shrink: 0;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.9);
+    }
+
+    /* INTERACTIVE DIABLO ASCII GLOBES */
+    .globe-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 76px;
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .globe-btn:active .globe-ascii {
+      transform: scale(0.96);
+      filter: brightness(1.3);
+    }
+    .globe-ascii {
+      font-family: monospace;
+      font-size: 10px;
+      line-height: 1.1;
+      text-align: center;
+      white-space: pre;
+      border: 2px solid #6b4d24;
+      background: #0c0907;
+      padding: 3px 4px;
+      border-radius: 8px;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6);
+      transition: transform 0.1s ease;
+      width: 100%;
+    }
+    .globe-life {
+      color: #ef4444;
+      text-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+    }
+    .globe-mana {
+      color: #38bdf8;
+      text-shadow: 0 0 4px rgba(56, 189, 248, 0.6);
+    }
+    .globe-border {
+      color: #a88a58;
+    }
+    .globe-pot-hint {
+      font-size: 9px;
+      font-weight: bold;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Center Console & Buttons */
+    .center-console {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .console-row {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .dpad-mini {
+      display: grid;
+      grid-template-columns: repeat(3, 30px);
+      grid-template-rows: repeat(3, 25px);
+      gap: 2px;
+    }
+    .dpad-btn {
+      background: #1c1815;
+      color: #d1b894;
+      border: 1px solid #5a4225;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .dpad-btn:active {
+      background: #fbbf24;
+      color: #000;
+    }
+
+    /* Clean 4-Skill Dynamic Hotbar + Skills / Auto / Descend Buttons */
+    .actions-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+    .action-btn {
+      background: #1a1613;
+      color: #e2d9cb;
+      border: 1px solid #5a4225;
+      border-radius: 6px;
+      padding: 6px 2px;
+      font-size: 9px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+    }
+    .action-btn:active {
+      filter: brightness(1.3);
+      transform: translateY(1px);
+    }
+    .btn-skill { border-color: #92400e; color: #fed7aa; }
+    .btn-tree { border-color: #eab308; color: #fef08a; background: #261f0c; }
+    .btn-auto { border-color: #0891b2; color: #a5f3fc; background: #0e222c; }
+    .btn-stairs { border-color: #db2777; color: #fbcfe8; background: #260e1d; }
+
+    /* Modals */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px;
+    }
+    .modal-box {
+      background: #120e0b;
+      border: 3px solid #92400e;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 30px rgba(0,0,0,0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-box h2 {
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: #fbbf24;
+    }
+    .modal-btn {
+      background: #b45309;
+      color: #fff;
+      border: 1px solid #fbbf24;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Class Selection Cards */
+    .class-card {
+      background: #1a1510;
+      border: 1px solid #5a4225;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .class-card.selected {
+      border-color: #fbbf24;
+      background: #2a2014;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    }
+    .class-name { font-size: 12px; font-weight: bold; color: #fbbf24; }
+    .class-desc { font-size: 10px; color: #a8a29e; margin-top: 2px; }
+
+    /* Skill Tree Rows */
+    .skill-row {
+      background: #1a1510;
+      border: 1px solid #5a4225;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+    .skill-row.unlocked {
+      border-color: #ca8a04;
+    }
+    .skill-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .skill-title { font-weight: bold; font-size: 12px; color: #fde047; }
+    .skill-rank { font-size: 10px; color: #38bdf8; }
+    .skill-desc { font-size: 10px; color: #94a3b8; }
+    .skill-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      align-items: center;
+    }
+    .btn-upgrade {
+      background: #eab308;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .btn-upgrade:disabled {
+      background: #475569;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+    .btn-assign {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      font-size: 9px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Character Sheet Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      text-align: left;
+      font-size: 11px;
+    }
+    .stat-card {
+      background: #18130e;
+      border: 1px solid #4a361e;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+    .stat-card-title {
+      font-size: 9.5px;
+      color: #a88a58;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .stat-card-val {
+      font-size: 13px;
+      font-weight: bold;
+      color: #fbbf24;
+      margin-top: 2px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Gothic Header Bar (Tap for Character Stats!) -->
+  <div id="header" onclick="game.openCharacterSheet()" title="Tap for Character Stats Sheet">
+    <div class="header-title">
+      ⚜ <span id="hero-title">DIABLO ROGUE</span> <span id="floor-badge" style="color: #c084fc; font-size: 10px;">[DEPTH 1/20]</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span id="lvl-text" style="color: #fbbf24; font-weight: bold;">LVL 1</span>
+      <span id="gold-text" style="color: #fde047;">0 💰</span>
+      <span id="stairs-tracker" style="color: #ec4899; font-weight: bold;">▼ Stairs: ?</span>
+      <span style="background: #2b1f11; border: 1px solid #fbbf24; color: #fbbf24; border-radius: 4px; font-size: 9px; padding: 2px 5px; font-weight: bold;">STATS</span>
+    </div>
+  </div>
+
+  <!-- Equipment & Stats Bar -->
+  <div id="equip-bar" onclick="game.openCharacterSheet()">
+    <div class="equip-tag" id="weapon-display" style="color: #fb923c;">⚔ Oak Quarterstaff (+2)</div>
+    <div class="equip-tag" id="armor-display" style="color: #60a5fa;">🛡 Barkskin Vestment (+1)</div>
+    <div class="equip-tag" id="xp-display" style="color: #fde047;">XP: 0/20</div>
+  </div>
+
+  <!-- Game Canvas Container -->
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="log-overlay"></div>
+  </div>
+
+  <!-- DIABLO GOTHIC DASHBOARD -->
+  <div id="diablo-dashboard">
+    <!-- LEFT: INTERACTIVE LIFE GLOBE (Tap to drink Health Potion) -->
+    <button class="globe-btn" id="btn-life-globe">
+      <pre class="globe-ascii"><span class="globe-border"> .----.</span>
+<span class="globe-border">/</span><span class="globe-life"> LIFE </span><span class="globe-border">\</span>
+<span class="globe-border">|</span><span class="globe-life" id="life-val"> 32/32 </span><span class="globe-border">|</span>
+<span class="globe-border">|</span><span class="globe-life" id="life-bar">██████</span><span class="globe-border">|</span>
+<span class="globe-border"> \</span><span class="globe-life" id="life-bot">████</span><span class="globe-border">/</span>
+<span class="globe-border">  '--'</span></pre>
+      <span class="globe-pot-hint" id="hp-pot-hint" style="color: #ef4444;">💖 POTION (<span id="hp-pot-count">1</span>)</span>
+    </button>
+
+    <!-- CENTER: DIABLO CONSOLE (D-Pad + Clean Hotbar & Skill Tree) -->
+    <div class="center-console">
+      <div class="console-row">
+        <!-- Compact D-Pad -->
+        <div class="dpad-mini">
+          <div></div>
+          <button class="dpad-btn" id="btn-up">▲</button>
+          <div></div>
+
+          <button class="dpad-btn" id="btn-left">◀</button>
+          <button class="dpad-btn" id="btn-wait" style="font-size: 7px; color: #a8a29e;">REST</button>
+          <button class="dpad-btn" id="btn-right">▶</button>
+
+          <div></div>
+          <button class="dpad-btn" id="btn-down">▼</button>
+          <div></div>
+        </div>
+
+        <!-- 3x2 Grid: 4 Hotbar Skills + Skill Tree + Auto/Descend -->
+        <div class="actions-grid">
+          <button class="action-btn btn-skill" id="btn-hotbar-1">
+            <span id="slot-1-icon">🌿 3MP</span>
+            <span id="slot-1-name">THORN WHIP</span>
+          </button>
+          <button class="action-btn btn-skill" id="btn-hotbar-2">
+            <span id="slot-2-icon">🔒</span>
+            <span id="slot-2-name">SLOT 2</span>
+          </button>
+          <button class="action-btn btn-tree" id="btn-skill-tree">
+            <span id="tree-sp-icon">★ SP: 0</span>
+            <span>SKILL TREE</span>
+          </button>
+
+          <button class="action-btn btn-skill" id="btn-hotbar-3">
+            <span id="slot-3-icon">🔒</span>
+            <span id="slot-3-name">SLOT 3</span>
+          </button>
+          <button class="action-btn btn-auto" id="btn-auto">
+            <span>🗺</span>
+            <span>AUTO-WALK</span>
+          </button>
+          <button class="action-btn btn-stairs" id="btn-stairs-down">
+            <span>▼</span>
+            <span>DESCEND</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: INTERACTIVE MANA GLOBE (Tap to consume Mana Crystal) -->
+    <button class="globe-btn" id="btn-mana-globe">
+      <pre class="globe-ascii"><span class="globe-border"> .----.</span>
+<span class="globe-border">/</span><span class="globe-mana"> MANA </span><span class="globe-border">\</span>
+<span class="globe-border">|</span><span class="globe-mana" id="mana-val"> 18/18 </span><span class="globe-border">|</span>
+<span class="globe-border">|</span><span class="globe-mana" id="mana-bar">██████</span><span class="globe-border">|</span>
+<span class="globe-border"> \</span><span class="globe-mana" id="mana-bot">████</span><span class="globe-border">/</span>
+<span class="globe-border">  '--'</span></pre>
+      <span class="globe-pot-hint" id="mp-pot-hint" style="color: #38bdf8;">✦ MANA (<span id="mp-pot-count">1</span>)</span>
+    </button>
+  </div>
+
+  <!-- CHARACTER STATS PROFILE OVERVIEW MODAL -->
+  <div id="char-sheet-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="sheet-hero-name">⚜ CHARACTER PROFILE ⚜</h2>
+        <button onclick="game.closeCharacterSheet()" style="background: none; border: 1px solid #785a2b; color: #fff; border-radius: 4px; padding: 2px 8px; cursor: pointer;">✕</button>
+      </div>
+
+      <div id="sheet-title-badge" style="font-size: 11px; color: #93c5fd;">Druid • Guardian of the Ancients</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-title">Level & Experience</div>
+          <div class="stat-card-val" id="sheet-lvl-xp">LVL 1 (0/20 XP)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Skill Points Available</div>
+          <div class="stat-card-val" id="sheet-sp" style="color: #fde047;">0 SP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Health (HP)</div>
+          <div class="stat-card-val" id="sheet-hp" style="color: #ef4444;">32 / 32</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Mana (MP)</div>
+          <div class="stat-card-val" id="sheet-mp" style="color: #38bdf8;">18 / 18</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Total Attack (ATK)</div>
+          <div class="stat-card-val" id="sheet-atk" style="color: #fb923c;">7 ATK</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Total Defense (DEF)</div>
+          <div class="stat-card-val" id="sheet-def" style="color: #60a5fa;">3 DEF</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Gold Hoarded</div>
+          <div class="stat-card-val" id="sheet-gold" style="color: #fde047;">0 💰</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-title">Monsters Slain</div>
+          <div class="stat-card-val" id="sheet-kills" style="color: #f87171;">0 Kills</div>
+        </div>
+      </div>
+
+      <div style="background: #18130e; border: 1px solid #4a361e; border-radius: 6px; padding: 8px; text-align: left; font-size: 11px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #4ade80; font-weight: bold;" id="sheet-buffs">✨ Status & Buffs: None (Healthy)</div>
+        <div style="color: #fb923c; font-weight: bold;" id="sheet-weapon">⚔ Weapon: Oak Quarterstaff (+2 ATK)</div>
+        <div style="color: #60a5fa; font-weight: bold;" id="sheet-armor">🛡 Armor: Barkskin Vestment (+1 DEF)</div>
+      </div>
+
+      <div style="text-align: left;">
+        <div style="font-size: 10px; color: #a88a58; font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">Learned Abilities:</div>
+        <div id="sheet-abilities-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+          <!-- Injected via JavaScript -->
+        </div>
+      </div>
+
+      <button class="modal-btn" onclick="game.closeCharacterSheet()">RETURN TO GAME</button>
+    </div>
+  </div>
+
+  <!-- CHARACTER CREATION MODAL -->
+  <div id="char-creation-modal" class="modal-overlay" style="display: flex;">
+    <div class="modal-box">
+      <h2>⚜ CHOOSE YOUR HERO ⚜</h2>
+      <div>
+        <label style="font-size: 11px; color: #fbbf24; display: block; margin-bottom: 4px;">HERO NAME:</label>
+        <input type="text" id="hero-name-input" value="Eldrin" maxlength="16" style="background: #1c1815; border: 1px solid #fbbf24; color: #fff; padding: 6px 10px; border-radius: 4px; font-family: monospace; font-size: 13px; width: 80%; text-align: center;">
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; margin: 6px 0;">
+        <div class="class-card selected" onclick="game.selectClass('Druid', this)">
+          <div class="class-name">🌿 DRUID (Guardian of the Ancients)</div>
+          <div class="class-desc">Nature magic, Iron Bear shapeshifting (+8 DEF, +5 ATK), poison vines, & storm tempests.</div>
+        </div>
+        <div class="class-card" onclick="game.selectClass('Warrior', this)">
+          <div class="class-name">⚔ WARRIOR (Iron Vanguard)</div>
+          <div class="class-desc">Cleaving sweeps, 360° whirlwind, battle cries, and crushing leap slams.</div>
+        </div>
+        <div class="class-card" onclick="game.selectClass('Sorceress', this)">
+          <div class="class-name">☼ SORCERESS (Arcane Tempest)</div>
+          <div class="class-desc">Fiery bolts, explosive fireballs, freezing frost novae, teleport, & meteors.</div>
+        </div>
+        <div class="class-card" onclick="game.selectClass('Rogue', this)">
+          <div class="class-name">🗡 ROGUE (Shadow Assassin)</div>
+          <div class="class-desc">Poison stiletto, shadow dashes, knife fan spray, and 350% lethal assassinations.</div>
+        </div>
+        <div class="class-card" onclick="game.selectClass('Paladin', this)">
+          <div class="class-name">✨ PALADIN (Sacred Crusader)</div>
+          <div class="class-desc">Holy smite, radiant healing bursts, blessed hammers, & divine shields.</div>
+        </div>
+      </div>
+
+      <button class="modal-btn" onclick="game.confirmCharacterCreation()">EMBARK INTO SANCTUARY</button>
+    </div>
+  </div>
+
+  <!-- SKILL TREE MODAL -->
+  <div id="skill-tree-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="tree-class-title">🌿 DRUID SKILL TREE</h2>
+        <button onclick="game.closeSkillTree()" style="background: none; border: 1px solid #785a2b; color: #fff; border-radius: 4px; padding: 2px 8px; cursor: pointer;">✕</button>
+      </div>
+      <div id="tree-sp-banner" style="font-size: 12px; color: #fbbf24; font-weight: bold;">★ Available Skill Points: 0</div>
+
+      <div id="tree-skills-list" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <button class="modal-btn" onclick="game.closeSkillTree()">RETURN TO GAME</button>
+    </div>
+  </div>
+
+  <!-- Game Over / Victory Modal -->
+  <div id="game-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h2 id="modal-title" style="color: #ef4444;">YOU DIED</h2>
+      <p id="modal-msg" style="color: #a8a29e; margin: 8px 0; font-size: 12px;">Slain in the darkness of Sanctuary...</p>
+      <button class="modal-btn" onclick="game.restart()">RESURRECT</button>
+    </div>
+  </div>
+
+  <script src="game.js?v=9"></script>
+</body>
+</html>
