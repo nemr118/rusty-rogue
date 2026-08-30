@@ -433,12 +433,16 @@ class GameEngine {
   }
 
   triggerHotbarSlot(slot) {
-    if (slot >= 0 && slot < 4) {
+    if (slot < 4 && this.player.hotbar[slot]) {
       const abId = this.player.hotbar[slot];
-      if (!abId) {
-        this.addLog(`Slot ${slot + 1} is empty! Tap [SKILL TREE] to assign abilities.`, "#94a3b8");
+
+      // If already targeting THIS ability, pressing the hotbar key/button again confirms and fires!
+      if (this.targetingAbilityId === abId) {
+        this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
+        this.targetingAbilityId = null;
         return;
       }
+
       const ab = this.player.abilities.find(a => a.id === abId);
       if (!ab || ab.level === 0) {
         this.addLog(`Ability is locked! Unlock it in the Skill Tree.`, "#ef4444");
@@ -467,10 +471,13 @@ class GameEngine {
           this.targetCursor = { x: this.player.x, y: this.player.y };
         }
         this.targetingAbilityId = abId;
-        this.addLog(`🎯 Aiming [${ab.name}]: WASD/Arrows to aim, Enter/Space/Tap to fire, Tab to cycle targets, Esc to cancel.`, "#fde047");
+        this.addLog(`🎯 Aiming [${ab.name}]: Press [${slot + 1}]/Enter/Space to fire, WASD/Arrows to aim, Tab to cycle.`, "#fde047");
       } else {
+        this.targetingAbilityId = null;
         this.castAbility(abId, this.player.x, this.player.y);
       }
+    } else {
+      this.addLog(`Slot [${slot + 1}] is empty. Press [K] for Skill Tree.`, "#94a3b8");
     }
   }
 
@@ -2089,39 +2096,16 @@ class GameEngine {
           break;
         case 'k': case 'K': case 't': case 'T': this.openSkillTree(); break;
         case 'o': case 'O': this.startAutoexplore(); break;
-        case '1':
-          if (this.targetingAbilityId) {
-            this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
-          } else {
-            this.triggerHotbarSlot(0);
-          }
-          break;
-        case '2':
-          if (this.targetingAbilityId) {
-            this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
-          } else {
-            this.triggerHotbarSlot(1);
-          }
-          break;
-        case '3':
-          if (this.targetingAbilityId) {
-            this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
-          } else {
-            this.triggerHotbarSlot(2);
-          }
-          break;
-        case '4':
-          if (this.targetingAbilityId) {
-            this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
-          } else {
-            this.triggerHotbarSlot(3);
-          }
-          break;
+        case '1': this.triggerHotbarSlot(0); break;
+        case '2': this.triggerHotbarSlot(1); break;
+        case '3': this.triggerHotbarSlot(2); break;
+        case '4': this.triggerHotbarSlot(3); break;
         case 'p': case 'P': this.useHealthPotion(); break;
         case 'm': case 'M': this.useManaPotion(); break;
-        case ' ': case '.':
+        case ' ': case '.': case 'f': case 'F':
           if (this.targetingAbilityId) {
             this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
+            this.targetingAbilityId = null;
           } else if (this.map[this.player.y][this.player.x].type === TILE_STAIRS) {
             this.nextFloor();
           } else {
@@ -2132,6 +2116,7 @@ class GameEngine {
         case 'Enter':
           if (this.targetingAbilityId) {
             this.castAbility(this.targetingAbilityId, this.targetCursor.x, this.targetCursor.y);
+            this.targetingAbilityId = null;
           } else if (this.map[this.player.y][this.player.x].type === TILE_STAIRS) {
             this.nextFloor();
           }
